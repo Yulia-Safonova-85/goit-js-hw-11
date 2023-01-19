@@ -2,10 +2,12 @@ import './css/styles.css';
 
 import axios from 'axios';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import SimpleLightbox from "simplelightbox";
+import "simplelightbox/dist/simple-lightbox.min.css";
  
 const searchForm = document.querySelector('.search-form');
 const gallery = document.querySelector('.gallery');
-
+const loadBtn = document.querySelector('.load-more');
 
 const BASE_URL = 'https://pixabay.com/api/'
 const KEY_API = '32875464-b0eaa8b0d7d7f8361833525ce';
@@ -19,29 +21,45 @@ async function getAxios(inputrequest) {
     }
 }
 
+
+
 searchForm.addEventListener('submit', onSubmit);
 
 async function onSubmit(e) {
     e.preventDefault();
     try {
-        let inputrequest = e.target.value;
-           const test =  await getAxios(inputrequest)
-            return markupPost(data)    
+        let inputrequest = e.target.searchQuery.value.trim();
+        const response = await getAxios(inputrequest);
+        markupPost();
+        
+        if (response.totalHits > 40) {
+            loadBtn.classList.remove('is-hidden');
+        } else {
+            loadBtn.classList.add('is-hidden');
         }
+        
+    }
     catch (err) {
-        { Notify.failure(`Sorry, there are no images matching your search query. Please try again.`) }
+        Notify.failure(`Sorry, there are no images matching your search query. Please try again.`)
     }
 }
 
 
+const lightbox = new SimpleLightbox('.gallery__item a', {
+    captionsData: 'alt',
+    captionPosition: 'bottom',
+    captionDelay: '250ms'  })
+
+
 function markupPost(data) {
-   const markup = data.map( ({largeImageURL,
+    const markup = data.map(({ largeImageURL,
         webformatURL,
         tags,
         likes,
         views,
         comments,
-       downloads }) => `<a class="gallery__item" href="${largeImageURL}">
+        downloads }) => 
+        `<a class="gallery__item" href="${largeImageURL}">
                   <div class="photo-card">
                       <img src="${webformatURL}" alt="${tags}" loading="lazy" />
                       <div class="info">
@@ -51,8 +69,10 @@ function markupPost(data) {
                         <p class="info-item"><b>Downloads</b> ${downloads}</p>
                       </div>
                     </div>
-                 </a>`);
+                 </a>`)
+
     gallery.innerHTML = markup.join('');
+    lightbox.refresh(); 
 }
-       
+      
 
