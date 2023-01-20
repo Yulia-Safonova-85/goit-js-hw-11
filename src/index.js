@@ -19,9 +19,8 @@ async function getAxios(inputrequest) {
     } catch (error) {
         console.log(error.toJSON())
     }
+
 }
-
-
 
 searchForm.addEventListener('submit', onSubmit);
 
@@ -29,8 +28,8 @@ async function onSubmit(e) {
     e.preventDefault();
     try {
         let inputrequest = e.target.searchQuery.value.trim();
-        const response = await getAxios(inputrequest);
-        markupPost();
+        const response = await getAxios(inputrequest).then(data =>{markupPost(data)})
+        ;
         
         if (response.totalHits > 40) {
             loadBtn.classList.remove('is-hidden');
