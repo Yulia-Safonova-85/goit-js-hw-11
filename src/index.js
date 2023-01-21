@@ -39,16 +39,16 @@ searchForm.addEventListener('submit', onSubmit);
 
 async function onSubmit(e) {
     e.preventDefault();
-    if (!searchQuery) {
+
+    try {
+         if (!inputrequest) {
         gallery.innerHTML = '';
        loadBtn.classList.add('is-hidden'); 
     }
-    
-    try {
-        
         let inputrequest = e.currentTarget.searchQuery.value.trim();
         const response = await getAxios(inputrequest).then(response => { markupPost(response.hits) })
         observer.observe(guard);
+
         if (response.totalHits > 40) {
             loadBtn.classList.remove('is-hidden');
         } else {
@@ -57,19 +57,29 @@ async function onSubmit(e) {
     }
     catch (err) {
         Notify.failure(`Sorry, there are no images matching your search query. Please try again.`)
+       
+       
     }
 }
 
 loadBtn.addEventListener('click', onLoad)
 
-function onLoad() {
+async function onLoad() {
     page += 1;
-    getAxios(searchQuery, page);
-    markupPost(response.hits)
+    const response = await getAxios(searchQuery, page);
+    markupPost(response.hits);
     lightbox.refresh(); 
-    if (currentHits === res.totalHits) {
+    
+
+    if (currentHits === response.totalHits) {
          loadBtn.classList.add('is-hidden')
-     }
+    }
+    if (response.totalHits > 0) {
+        Notify.success(`Hooray! We found ${response.totalHits} images.`);
+        gallery.innerHTML = '';
+        markupPost(response.hits);
+        lightbox.refresh(); 
+    }
     }
     
 
@@ -89,7 +99,7 @@ function markupPost(data) {
         downloads }) => 
         `<a class="gallery__item" href="${largeImageURL}">
                   <div class="photo-card">
-                      <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+                      <img src="${webformatURL}" alt="${tags}" loading="lazy" width='300' />
                       <div class="info">
                         <p class="info-item"><b>Likes</b> ${likes}</p>
                         <p class="info-item"><b>Views</b> ${views}</p>
@@ -100,6 +110,7 @@ function markupPost(data) {
                  </a>`)
 
     gallery.innerHTML = markup.join('');
+
     lightbox.refresh(); 
 }
       
