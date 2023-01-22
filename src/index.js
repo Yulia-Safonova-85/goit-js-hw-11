@@ -1,85 +1,73 @@
 import './css/styles.css';
+import NewApiService from './newPostService';
 
-import axios from 'axios';
+
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
  
+
 const searchForm = document.querySelector('.search-form');
 const gallery = document.querySelector('.gallery');
 const loadBtn = document.querySelector('.load-more');
 const guard = document.querySelector('.js-guard');
 
-
-let page = 1;
-let searchQuery = '';
-let currentHits = 0;
+const newApiPost = new NewApiService();
 
 const option = {
     root: null,
     rootMargin: '200px',
-    threshold: 1.0
-}
+    threshold: 1.0,
+};
    const observer = new IntersectionObserver(onInfinityLoad, option)
 
-const BASE_URL = 'https://pixabay.com/api/'
-const KEY_API = '32875464-b0eaa8b0d7d7f8361833525ce';
-
-async function getAxios(inputrequest) {
-    try {
-    const response = await axios.get(`${BASE_URL}/?key=${KEY_API}&q=${inputrequest}&image_type=photo&orientation=horizontal&safesearch=true&page=1&per_page=40`)
-        return response.data;
-    } catch (error) {
-        console.log(error.toJSON())
-    }
-
-}
-
+loadBtn.classList.add('is-hidden');
 searchForm.addEventListener('submit', onSubmit);
 
 async function onSubmit(e) {
     e.preventDefault();
 
     try {
-         if (!inputrequest) {
         gallery.innerHTML = '';
-       loadBtn.classList.add('is-hidden'); 
-    }
-        let inputrequest = e.currentTarget.searchQuery.value.trim();
-        const response = await getAxios(inputrequest).then(response => { markupPost(response.hits) })
-        observer.observe(guard);
-
-        if (response.totalHits > 40) {
-            loadBtn.classList.remove('is-hidden');
-        } else {
-            loadBtn.classList.add('is-hidden');
-        }
+        newApiPost.query = e.currentTarget.searchQuery.value.trim();
+        newApiPost.resetPage();
+        
+       
+        await fetchPost();
+        
     }
     catch (err) {
-        Notify.failure(`Sorry, there are no images matching your search query. Please try again.`)
-       
-       
+        console.log(err);
     }
+}
+
+function fetchPost() {
+    loadBtn.classList.add('is-hidden');
+    
+    newApiPost.getAxios().then(data => {
+
+        newApiPost.hits = data.totalHits;
+        if (!newApiPost.query) {
+            loadBtn.classList.add('is-hidden');
+            return Notify.failure(`Sorry, there are no images matching your search query. Please try again.`);
+        }
+        markupPost(data.hits);
+        if (data.totalHits > 0) {
+        Notify.success(`Hooray! We found ${data.totalHits} images.`);
+            loadBtn.classList.remove('is-hidden');
+
+        lightbox.refresh(); 
+    }
+    })
 }
 
 loadBtn.addEventListener('click', onLoad)
 
-async function onLoad() {
-    page += 1;
-    const response = await getAxios(searchQuery, page);
-    markupPost(response.hits);
+ function onLoad() {
+     fetchPost();
     lightbox.refresh(); 
-    
+    observer.observe(guard);
 
-    if (currentHits === response.totalHits) {
-         loadBtn.classList.add('is-hidden')
-    }
-    if (response.totalHits > 0) {
-        Notify.success(`Hooray! We found ${response.totalHits} images.`);
-        gallery.innerHTML = '';
-        markupPost(response.hits);
-        lightbox.refresh(); 
-    }
     }
     
 
@@ -118,11 +106,8 @@ function markupPost(data) {
 function onInfinityLoad(entries, observer) {
     entries.forEach((entry) => {
         if (entry.isIntersecting) {
-            page += 1
-            getAxios(inputrequest).then(response => {
-                markupPost(response.hits)
-            })
 
+            fetchPost();
         }
     })
 }
