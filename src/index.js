@@ -21,7 +21,7 @@ const option = {
 };
    const observer = new IntersectionObserver(onInfinityLoad, option)
 
-loadBtn.classList.add('is-hidden');
+
 searchForm.addEventListener('submit', onSubmit);
 
 async function onSubmit(e) {
@@ -41,14 +41,13 @@ async function onSubmit(e) {
     }
 }
 
-function fetchPost() {
-    loadBtn.classList.add('is-hidden');
+   function fetchPost() {
+    
     
     newApiPost.getAxios().then(data => {
 
         newApiPost.hits = data.totalHits;
         if (!newApiPost.query) {
-            loadBtn.classList.add('is-hidden');
             return Notify.failure(`Sorry, there are no images matching your search query. Please try again.`);
         }
         markupPost(data.hits);
@@ -61,31 +60,33 @@ function fetchPost() {
     })
 }
 
-loadBtn.addEventListener('click', onLoad)
+    loadBtn.addEventListener('click', onLoad)
 
- function onLoad() {
-     fetchPost();
-    lightbox.refresh(); 
-    observer.observe(guard);
+function onLoad() {
+    loadBtn.classList.remove('is-hidden');
+        fetchPost();
+        lightbox.refresh();
+        observer.observe(guard);
 
     }
     
 
-const lightbox = new SimpleLightbox('.gallery a', {
-    captionsData: 'alt',
-    captionPosition: 'bottom',
-    captionDelay: '250ms'  })
+    const lightbox = new SimpleLightbox('.gallery a', {
+        captionsData: 'alt',
+        captionPosition: 'bottom',
+        captionDelay: '250ms'
+    })
 
 
-function markupPost(data) {
-    const markup = data.map(({ largeImageURL,
-        webformatURL,
-        tags,
-        likes,
-        views,
-        comments,
-        downloads }) => 
-        `<a class="gallery__item" href="${largeImageURL}">
+    function markupPost(data) {
+        const markup = data.map(({ largeImageURL,
+            webformatURL,
+            tags,
+            likes,
+            views,
+            comments,
+            downloads }) =>
+            `<a class="gallery__item" href="${largeImageURL}">
                   <div class="photo-card">
                       <img src="${webformatURL}" alt="${tags}" loading="lazy" width='300' />
                       <div class="info">
@@ -97,17 +98,19 @@ function markupPost(data) {
                     </div>
                  </a>`)
 
-    gallery.innerHTML = markup.join('');
+        gallery.innerHTML = markup.join('');
 
-    lightbox.refresh(); 
-}
+        lightbox.refresh();
+    }
       
 
-function onInfinityLoad(entries, observer) {
-    entries.forEach((entry) => {
-        if (entry.isIntersecting) {
+    function onInfinityLoad(entries, observer) {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                fetchPost().then(data => {
+                    markupPost(data.hits);
+                })
+            }
+        })
+    }
 
-            fetchPost();
-        }
-    })
-}
